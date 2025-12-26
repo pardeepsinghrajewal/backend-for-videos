@@ -1,8 +1,6 @@
 import config from "./config.js";
-import express from "express";
 import connectDB from "./db/index.js";
-
-const app = express();
+import { app } from "./app.js";
 
 connectDB()
     .then(() => {
