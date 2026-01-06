@@ -16,5 +16,6 @@ const config = {
     CLOUDINARY_API_SECRET: String(process.env.CLOUDINARY_API_SECRET),
     JSON_LIMIT: "16KB",
     URL_LIMIT: "16KB",
+    NODE_ENV: String(process.env.NODE_ENV),
 };
 export default config;
