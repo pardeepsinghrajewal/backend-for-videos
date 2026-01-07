@@ -23,7 +23,8 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Password is required!");
     }
 
-    const avatarLocalPath = req.files?.avatar[0]?.path;
+    console.log("%c req.files ", "color: red;", req.files.avatar[0].path);
+    const avatarLocalPath = req?.files?.avatar[0]?.path;
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar image is required!");
     }
@@ -40,7 +41,7 @@ const registerUser = asyncHandler(async (req, res) => {
         username,
         email,
         password,
-        avtar: "p",
+        avatar: "p",
         fullName: fullName || "",
     });
 

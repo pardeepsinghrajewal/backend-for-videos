@@ -15,7 +15,7 @@ app.use(
 );
 
 app.use(express.json({ limit: config.JSON_LIMIT }));
-app.use(express.urlencoded({ limit: config.URL_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: config.URL_LIMIT }));
 app.use(express.static("public"));
 app.use(cookieParser());
 
