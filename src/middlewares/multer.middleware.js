@@ -6,8 +6,12 @@ const storage = multer.diskStorage({
         cb(null, path.join(process.cwd(), "public/temp"));
     },
     filename: function (req, file, cb) {
+        const fileName = file.originalname.substring(0, file.originalname.lastIndexOf("."));
+
+        const fileExt = file.originalname.split(".").pop();
+
         const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-        cb(null, file.fieldname + "-" + uniqueSuffix);
+        cb(null, `${file.fieldname}-${fileName}-${uniqueSuffix}.${fileExt}`);
     },
 });
 
