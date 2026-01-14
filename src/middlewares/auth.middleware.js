@@ -5,7 +5,6 @@ import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 
 const verifyJWT = asyncHandler(async (req, _, next) => {
-    console.log("* verifyJWT *");
     try {
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
 
