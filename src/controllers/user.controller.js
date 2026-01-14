@@ -6,6 +6,11 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
 
+const cookieOptions = {
+    httpOnly: true,
+    secure: true,
+};
+
 const registerUser = asyncHandler(async (req, res) => {
     try {
         const { username, email, password, fullName } = req.body;
@@ -107,18 +112,28 @@ const loginUser = asyncHandler(async (req, res) => {
         user.password = "*****";
         user.refreshToken = "*****";
 
-        const options = {
-            httpOnly: true,
-            secure: true,
-        };
-
         res.status(200)
-            .cookie("accessToken", accessToken, options)
-            .cookie("refreshToken", refreshToken, options)
+            .cookie("accessToken", accessToken, cookieOptions)
+            .cookie("refreshToken", refreshToken, cookieOptions)
             .json(new ApiResponse(true, "User logged in successfully!", { user, accessToken, refreshToken }));
     } catch (error) {
         throw error;
     }
 });
 
-export { registerUser, loginUser };
+const logoutUser = asyncHandler(async (req, res) => {
+    console.log("* logoutUser *", req.user._id);
+
+    User.findByIdAndUpdate(req.user._id, {
+        $unset: {
+            refreshToken: 1,
+        },
+    });
+
+    res.status(200)
+        .clearCookie("accessToken", cookieOptions)
+        .clearCookie("refreshToken", cookieOptions)
+        .json(new ApiResponse(true, "User logged out successfully!"));
+});
+
+export { registerUser, loginUser, logoutUser };
