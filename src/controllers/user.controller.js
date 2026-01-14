@@ -173,6 +173,38 @@ const refreshToken = asyncHandler(async (req, res) => {
     }
 });
 
+const changePassword = asyncHandler(async (req, res) => {
+    const { password, newPassword, confirmPassword } = req.body;
+
+    if (!password) {
+        throw new ApiError(400, "Password is required!");
+    }
+
+    if (!newPassword) {
+        throw new ApiError(400, "New Password is required!");
+    }
+
+    if (!confirmPassword) {
+        throw new ApiError(400, "Confirm Password is required!");
+    }
+
+    if (newPassword !== confirmPassword) {
+        throw new ApiError(400, "Confirm Password is not matched!");
+    }
+
+    if (!req?.user?._id) {
+        throw new ApiError(500, "User ID not found in changePassword function!");
+    }
+
+    const user = await User.findById(req.user._id);
+
+    user.password = newPassword;
+
+    user.save({ validateBeforeSave: false });
+
+    res.status(200).json(new ApiResponse(true, "Password updated successfully!"));
+});
+
 const generateAccessAndRefreshToken = async (userID) => {
     try {
         const user = await User.findById(userID);
@@ -190,4 +222,4 @@ const generateAccessAndRefreshToken = async (userID) => {
     }
 };
 
-export { registerUser, loginUser, logoutUser, refreshToken };
+export { registerUser, loginUser, logoutUser, refreshToken, changePassword };
