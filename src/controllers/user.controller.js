@@ -179,9 +179,9 @@ const refreshToken = asyncHandler(async (req, res) => {
 
 const changePassword = asyncHandler(async (req, res) => {
     try {
-        const { password, newPassword, confirmPassword } = req.body;
+        const { oldPassword, newPassword, confirmPassword } = req.body;
 
-        if (!password) {
+        if (!oldPassword) {
             throw new ApiError(400, "Password is required!");
         }
 
@@ -203,13 +203,19 @@ const changePassword = asyncHandler(async (req, res) => {
 
         const user = await User.findById(req.user._id);
 
+        const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+        if (!isPasswordCorrect) {
+            throw new ApiError(500, "Old password is not correct!");
+        }
+
         user.password = newPassword;
 
         user.save({ validateBeforeSave: false });
 
         res.status(200).json(new ApiResponse(true, "Password updated successfully!"));
     } catch (error) {
-        throw new ApiError(500, "Error while change the password!");
+        throw new ApiError(500, error?.message || "Error while change the password!");
     }
 });
 
@@ -239,8 +245,6 @@ const updateAccountInfo = asyncHandler(async (req, res) => {
             updatedInfo.fullName = fullName;
         }
 
-        console.log("* updatedInfo *", updatedInfo);
-
         const user = await User.findByIdAndUpdate(
             req.user._id,
             {
@@ -250,6 +254,9 @@ const updateAccountInfo = asyncHandler(async (req, res) => {
                 new: true,
             }
         );
+
+        user.password = "*****";
+        user.refreshToken = "*****";
 
         res.status(200).json(new ApiResponse(true, "Information is updated successfully!", user));
     } catch (error) {
@@ -282,12 +289,53 @@ const updateAvatar = asyncHandler(async (req, res) => {
             }
         );
 
+        user.password = "*****";
+        user.refreshToken = "*****";
+
         res.status(200).json(new ApiResponse(true, "Avatar image is updated successfully!", user));
     } catch (error) {
         if (fs.existsSync(req.file.path)) {
             fs.unlinkSync(req.file.path);
         }
         throw new ApiError(500, error?.message || "Error while updating the avatar image!");
+    }
+});
+
+const updateCoverImage = asyncHandler(async (req, res) => {
+    try {
+        const coverImageLocalPath = req.file.path;
+
+        if (!coverImageLocalPath) {
+            throw new ApiError(400, "Cover image is required!");
+        }
+
+        const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+        if (!coverImage || !coverImage.secure_url) {
+            throw new ApiError(500, "Server error while uploading cover image to cloudinary");
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            {
+                $set: {
+                    coverImage: coverImage.secure_url,
+                },
+            },
+            {
+                new: true,
+            }
+        );
+
+        user.password = "*****";
+        user.refreshToken = "*****";
+
+        res.status(200).json(new ApiResponse(true, "Cover image updated successfully!", user));
+    } catch (error) {
+        if (fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+        throw new ApiError(500, error?.message || "Server error while updating cover image");
     }
 });
 
@@ -317,4 +365,5 @@ export {
     getCurrentUser,
     updateAccountInfo,
     updateAvatar,
+    updateCoverImage,
 };
