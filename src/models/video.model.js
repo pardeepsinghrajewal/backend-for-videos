@@ -2,7 +2,7 @@ import mongoose, { Schema } from "mongoose";
 
 const videoSchema = new Schema(
     {
-        src: {
+        video: {
             type: String,
             required: [true, "Video src is required"],
         },

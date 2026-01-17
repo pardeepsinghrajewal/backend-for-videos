@@ -21,9 +21,11 @@ app.use(cookieParser());
 
 // import route
 import userRoute from "./routes/user.route.js";
+import videoRoute from "./routes/video.route.js";
 
 // route binding
 app.use("/api/v1/users", userRoute);
+app.use("/api/v1/video", videoRoute);
 
 app.use(errorHandler);
 
