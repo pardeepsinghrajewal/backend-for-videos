@@ -15,7 +15,7 @@ const cookieOptions = {
 
 const registerUser = asyncHandler(async (req, res) => {
     try {
-        const { username, email, password, fullName } = req.body;
+        const { username, email, password, fullName } = req.body ?? {};
 
         if (isEmpty(username)) {
             throw new ApiError(400, "Username is required!");
@@ -33,6 +33,11 @@ const registerUser = asyncHandler(async (req, res) => {
             throw new ApiError(400, "Password is required!");
         }
 
+        const avatarLocalPath = req?.files?.avatar?.[0]?.path;
+        if (!avatarLocalPath) {
+            throw new ApiError(400, "Avatar image is required!");
+        }
+
         const existedUser = await User.findOne({
             $or: [{ username }, { email }],
         });
@@ -41,13 +46,7 @@ const registerUser = asyncHandler(async (req, res) => {
             throw new ApiError(400, "User is already exist!");
         }
 
-        const avatarLocalPath = req?.files?.avatar?.[0]?.path;
-        if (!avatarLocalPath) {
-            throw new ApiError(400, "Avatar image is required!");
-        }
-
         const avatar = await uploadOnCloudinary(avatarLocalPath);
-
         if (avatar == null || avatar == undefined) {
             throw new ApiError(500, "Server error while uploading avatar image!");
         }
@@ -76,13 +75,17 @@ const registerUser = asyncHandler(async (req, res) => {
             fs.unlinkSync(req.files.coverImage[0].path);
         }
 
+        if (error instanceof ApiError) {
+            throw error;
+        }
+
         throw new ApiError(500, error?.message || "Error while register the user!");
     }
 });
 
 const loginUser = asyncHandler(async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { username, password } = req.body ?? {};
 
         if (isEmpty(username)) {
             throw new ApiError(400, "Username is required!");
@@ -102,7 +105,7 @@ const loginUser = asyncHandler(async (req, res) => {
         const isPasswordValid = await user.isPasswordCorrect(password);
 
         if (!isPasswordValid) {
-            throw new ApiError(400, "Password does not match!");
+            throw new ApiError(401, "Password does not match!");
         }
 
         const accessToken = user.generateAccessToken();
@@ -119,6 +122,9 @@ const loginUser = asyncHandler(async (req, res) => {
             .cookie("refreshToken", refreshToken, cookieOptions)
             .json(new ApiResponse(true, "User logged in successfully!", { user, accessToken, refreshToken }));
     } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
         throw new ApiError(500, error?.message || "Error while login!");
     }
 });
@@ -173,7 +179,10 @@ const refreshToken = asyncHandler(async (req, res) => {
             .cookie("refreshToken", refreshToken, cookieOptions)
             .json(new ApiResponse(true, "Token refreshed successfully!", { accessToken, refreshToken }));
     } catch (error) {
-        throw new ApiError(400, error?.message || "Invalid refresh token");
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, error?.message || "Invalid refresh token");
     }
 });
 
@@ -197,16 +206,12 @@ const changePassword = asyncHandler(async (req, res) => {
             throw new ApiError(400, "Confirm Password is not matched!");
         }
 
-        if (!req?.user?._id) {
-            throw new ApiError(500, "Error while updating the password");
-        }
-
         const user = await User.findById(req.user._id);
 
         const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
         if (!isPasswordCorrect) {
-            throw new ApiError(500, "Old password is not correct!");
+            throw new ApiError(400, "Old password is not correct!");
         }
 
         user.password = newPassword;
@@ -215,6 +220,9 @@ const changePassword = asyncHandler(async (req, res) => {
 
         res.status(200).json(new ApiResponse(true, "Password updated successfully!"));
     } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
         throw new ApiError(500, error?.message || "Error while change the password!");
     }
 });
@@ -229,7 +237,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
 const updateAccountInfo = asyncHandler(async (req, res) => {
     try {
-        const { email, fullName } = req.body;
+        const { email, fullName } = req.body ?? {};
 
         if (!isEmpty(email) && isNotValidEmail(email)) {
             throw new ApiError(400, "Email is not valid!");
@@ -260,6 +268,9 @@ const updateAccountInfo = asyncHandler(async (req, res) => {
 
         res.status(200).json(new ApiResponse(true, "Information is updated successfully!", user));
     } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
         throw new ApiError(500, error?.message || "Error while updating the account info!");
     }
 });
@@ -294,8 +305,11 @@ const updateAvatar = asyncHandler(async (req, res) => {
 
         res.status(200).json(new ApiResponse(true, "Avatar image is updated successfully!", user));
     } catch (error) {
-        if (fs.existsSync(req.file.path)) {
+        if (fs.existsSync(req.file?.path)) {
             fs.unlinkSync(req.file.path);
+        }
+        if (error instanceof ApiError) {
+            throw error;
         }
         throw new ApiError(500, error?.message || "Error while updating the avatar image!");
     }
@@ -303,7 +317,7 @@ const updateAvatar = asyncHandler(async (req, res) => {
 
 const updateCoverImage = asyncHandler(async (req, res) => {
     try {
-        const coverImageLocalPath = req.file.path;
+        const coverImageLocalPath = req.file?.path;
 
         if (!coverImageLocalPath) {
             throw new ApiError(400, "Cover image is required!");
@@ -332,8 +346,11 @@ const updateCoverImage = asyncHandler(async (req, res) => {
 
         res.status(200).json(new ApiResponse(true, "Cover image updated successfully!", user));
     } catch (error) {
-        if (fs.existsSync(req.file.path)) {
+        if (fs.existsSync(req.file?.path)) {
             fs.unlinkSync(req.file.path);
+        }
+        if (error instanceof ApiError) {
+            throw error;
         }
         throw new ApiError(500, error?.message || "Server error while updating cover image");
     }

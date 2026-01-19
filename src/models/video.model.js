@@ -40,4 +40,10 @@ const videoSchema = new Schema(
     }
 );
 
+videoSchema.methods.toggleStatus = async function () {
+    this.isPublished = !this.isPublished;
+    await this.save();
+    return this;
+};
+
 export const Video = mongoose.model("Video", videoSchema);

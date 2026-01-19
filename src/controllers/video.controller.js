@@ -2,12 +2,12 @@ import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import fs from "fs";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { removeFromCloudinary, uploadOnCloudinary, getPublicIdFromCloudinaryUrl } from "../utils/cloudinary.js";
 import { Video } from "../models/video.model.js";
 
 const addVideo = asyncHandler(async (req, res) => {
     try {
-        const { title, description } = req.body;
+        const { title, description } = req.body ?? {};
 
         if (!title) {
             throw new ApiError(400, "Title is required!");
@@ -59,30 +59,157 @@ const addVideo = asyncHandler(async (req, res) => {
         if (req?.files?.thumbnail?.[0]?.path && fs.existsSync(req.files.thumbnail[0].path)) {
             fs.unlinkSync(req.files.thumbnail[0].path);
         }
+        if (error instanceof ApiError) {
+            throw error;
+        }
+
         throw new ApiError(500, error?.message || "Server error while adding adding video record!");
     }
 });
 
 const getVideoById = asyncHandler(async (req, res) => {
     try {
-        console.log("* req.params *", req.params);
         const { id } = req.params;
+
         const video = await Video.findById(id);
+
+        if (!video) {
+            throw new ApiError(400, "No video found related to given ID!");
+        }
 
         res.status(200).json(new ApiResponse(true, "Video information retrieved successfully!", video));
     } catch (error) {
+        if (error.name === "CastError") {
+            return res.status(400).json(new ApiResponse(false, "Invalid video ID format"));
+        }
+
+        if (error instanceof ApiError) {
+            throw error;
+        }
+
         throw new ApiError(500, error?.message || "Error in getVideoById function!");
     }
 });
 
 const toggleVideoStatus = asyncHandler(async (req, res) => {
-    // 696b834909a427c9b81e9b32
-
     try {
-        const { id } = req.body;
+        const { id } = req.params;
+        const video = await Video.findById(id);
+        if (!video) {
+            throw new ApiError(400, "No video found related to given ID!");
+        }
+        await video.toggleStatus();
+
+        res.status(200).json(new ApiResponse(true, "Video status is toggled successfully!", video));
     } catch (error) {
+        if (error.name === "CastError") {
+            return res.status(400).json(new ApiResponse(false, "Invalid video ID format"));
+        }
+        if (error instanceof ApiError) {
+            throw error;
+        }
+
         throw new ApiError(500, error?.message || "Error in Toggle video status function!");
     }
 });
 
-export { addVideo, getVideoById };
+const updateVideo = asyncHandler(async (req, res) => {
+    try {
+        const { id, title, description } = req.body ?? {};
+
+        if (!id) {
+            throw new ApiError(400, "Video ID is required!");
+        }
+
+        if (!title && !description) {
+            throw new ApiError(400, " Title or description is required!");
+        }
+
+        const updatedInfo = {};
+
+        if (title) {
+            updatedInfo.title = title;
+        }
+
+        if (description) {
+            updatedInfo.description = description;
+        }
+
+        const video = await Video.findByIdAndUpdate(
+            id,
+            {
+                $set: updatedInfo,
+            },
+            {
+                new: true,
+            }
+        );
+
+        if (!video) {
+            throw new ApiError(400, "No video found related to the given ID!");
+        }
+        res.status(200).json(new ApiResponse(true, "Video updated successfully!", video));
+    } catch (error) {
+        if (error.name === "CastError") {
+            return res.status(400).json(new ApiResponse(false, "Invalid video ID format"));
+        }
+
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, error?.message || "Error in update video function.");
+    }
+});
+
+const getAllVideos = asyncHandler(async (req, res) => {
+    try {
+        const videos = await Video.find();
+        res.status(200).json(new ApiResponse(true, "Videos are fetched successfully!", videos));
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, error?.message || "Error while getting all videos!");
+    }
+});
+
+const deleteVideo = asyncHandler(async (req, res) => {
+    try {
+        const { id } = req.params ?? {};
+        if (!id) {
+            throw new ApiError(400, "ID is required!");
+        }
+        const video = await Video.findById(id);
+
+        if (!video) {
+            throw new ApiError(400, "No record found related to the given ID!");
+        }
+
+        if (video.video) {
+            const public_id = getPublicIdFromCloudinaryUrl(video.video);
+            if (public_id) {
+                const result = await removeFromCloudinary(public_id, "video");
+            }
+        }
+        if (video.thumbnail) {
+            const public_id = getPublicIdFromCloudinaryUrl(video.thumbnail);
+            if (public_id) {
+                const result = await removeFromCloudinary(public_id);
+            }
+        }
+
+        const isVideoDeleted = await Video.findByIdAndDelete(id);
+
+        if (!isVideoDeleted) {
+            throw new ApiError(400, "Video is not found related to the given ID!");
+        }
+        res.status(200).json(new ApiResponse(true, "Video removed successfully!"));
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, error?.message || "Error while deleting video!");
+    }
+});
+
+export { addVideo, getVideoById, toggleVideoStatus, updateVideo, getAllVideos, deleteVideo };
