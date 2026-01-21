@@ -3,10 +3,11 @@ import { ApiError } from "../utils/apiError.js";
 import { isEmpty, isNotValidEmail } from "../utils/validation.js";
 import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/apiResponse.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { getPublicIdFromCloudinaryUrl, removeFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 import fs from "fs";
 import config from "../config.js";
+import { Video } from "../models/video.model.js";
 
 const cookieOptions = {
     httpOnly: true,
@@ -188,7 +189,7 @@ const refreshToken = asyncHandler(async (req, res) => {
 
 const changePassword = asyncHandler(async (req, res) => {
     try {
-        const { oldPassword, newPassword, confirmPassword } = req.body;
+        const { oldPassword, newPassword, confirmPassword } = req.body ?? {};
 
         if (!oldPassword) {
             throw new ApiError(400, "Password is required!");
@@ -223,7 +224,40 @@ const changePassword = asyncHandler(async (req, res) => {
         if (error instanceof ApiError) {
             throw error;
         }
-        throw new ApiError(500, error?.message || "Error while change the password!");
+        throw new ApiError(500, error?.message || "Error while changing the password!");
+    }
+});
+
+const changePasswordWithoutOldPassword = asyncHandler(async (req, res) => {
+    try {
+        const { email, newPassword } = req.body ?? {};
+
+        if (isEmpty(email)) {
+            throw new ApiError(400, "Email is required!");
+        }
+
+        if (isNotValidEmail(email)) {
+            throw new ApiError(400, "Email is not valid!");
+        }
+
+        if (!newPassword) {
+            throw new ApiError(400, "New Password is required!");
+        }
+
+        const user = await User.findOne({
+            email,
+        });
+
+        user.password = newPassword;
+
+        user.save({ validateBeforeSave: false });
+
+        res.status(200).json(new ApiResponse(true, "Password changed successfully!"));
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, error?.message || "Error while changing the password!");
     }
 });
 
@@ -238,6 +272,10 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 const updateAccountInfo = asyncHandler(async (req, res) => {
     try {
         const { email, fullName } = req.body ?? {};
+
+        if (!email && !fullName) {
+            throw new ApiError(400, "All fields are empty!");
+        }
 
         if (!isEmpty(email) && isNotValidEmail(email)) {
             throw new ApiError(400, "Email is not valid!");
@@ -277,11 +315,16 @@ const updateAccountInfo = asyncHandler(async (req, res) => {
 
 const updateAvatar = asyncHandler(async (req, res) => {
     try {
+        const user2 = req.user;
+
         const avatarLocalPath = req.file?.path;
+
+        console.log("* user2 *", user2);
 
         if (!avatarLocalPath) {
             throw new ApiError(400, "Avatar image is required!");
         }
+
         const avatar = await uploadOnCloudinary(avatarLocalPath);
 
         if (!avatar || !avatar.secure_url) {
@@ -302,6 +345,18 @@ const updateAvatar = asyncHandler(async (req, res) => {
 
         user.password = "*****";
         user.refreshToken = "*****";
+
+        if (req?.user?.avatar) {
+            const public_id = getPublicIdFromCloudinaryUrl(req.user.avatar);
+            if (public_id) {
+                const result = await removeFromCloudinary(public_id);
+                if (result?.result !== "ok") {
+                    console.log(
+                        `Avatar ${req.user.avatar} is not found when try to remove old avatar from cloudinary while updating avatar!`
+                    );
+                }
+            }
+        }
 
         res.status(200).json(new ApiResponse(true, "Avatar image is updated successfully!", user));
     } catch (error) {
@@ -344,6 +399,18 @@ const updateCoverImage = asyncHandler(async (req, res) => {
         user.password = "*****";
         user.refreshToken = "*****";
 
+        if (req?.user?.coverImage) {
+            const public_id = getPublicIdFromCloudinaryUrl(req.user.coverImage);
+            if (public_id) {
+                const result = await removeFromCloudinary(public_id);
+                if (result?.result !== "ok") {
+                    console.log(
+                        `Cover image ${req.user.coverImage} is not found when try to remove old cover image from cloudinary while updating cover image!`
+                    );
+                }
+            }
+        }
+
         res.status(200).json(new ApiResponse(true, "Cover image updated successfully!", user));
     } catch (error) {
         if (fs.existsSync(req.file?.path)) {
@@ -353,6 +420,60 @@ const updateCoverImage = asyncHandler(async (req, res) => {
             throw error;
         }
         throw new ApiError(500, error?.message || "Server error while updating cover image");
+    }
+});
+
+const getAllUsers = asyncHandler(async (req, res) => {
+    const users = await User.find();
+    res.status(200).json(new ApiResponse(true, "All Users info retrieved successfully!", users));
+});
+
+const deleteUser = asyncHandler(async (req, res) => {
+    try {
+        const user = req.user;
+        const videos = await Video.find({
+            owner: user._id,
+        });
+        for (const video of videos) {
+            await video.deleteOne();
+        }
+
+        if (user.avatar) {
+            const public_id = getPublicIdFromCloudinaryUrl(user.avatar);
+            if (public_id) {
+                const result = await removeFromCloudinary(public_id);
+                if (result?.result !== "ok") {
+                    console.log(
+                        `Avatar ${user.avatar} is not found when try to remove from cloudinary while deleting the user!`
+                    );
+                }
+            }
+        }
+        if (user.coverImage) {
+            const public_id = getPublicIdFromCloudinaryUrl(user.coverImage);
+            if (public_id) {
+                const result = await removeFromCloudinary(public_id);
+                if (result?.result !== "ok") {
+                    console.log(
+                        `Cover image ${user.coverImage} is not found when try to remove from cloudinary while deleting the user!`
+                    );
+                }
+            }
+        }
+
+        await User.findByIdAndDelete(req.user._id);
+
+        res.status(200)
+            .clearCookie("accessToken", cookieOptions)
+            .clearCookie("refreshToken", cookieOptions)
+            .json(new ApiResponse(true, "User deleted and logged out successfully!"));
+
+        //res.status(200).json(new ApiResponse(true, "videos are found and removed!", videos));
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, error?.message || "Error while deleting the user!");
     }
 });
 
@@ -383,4 +504,7 @@ export {
     updateAccountInfo,
     updateAvatar,
     updateCoverImage,
+    getAllUsers,
+    deleteUser,
+    changePasswordWithoutOldPassword,
 };

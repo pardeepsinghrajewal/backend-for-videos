@@ -7,30 +7,27 @@ import {
     updateVideo,
     getAllVideos,
     deleteVideo,
+    updateVideoThumbnail,
 } from "../controllers/video.controller.js";
-import { upload } from "../middlewares/multer.middleware.js";
+import { uploadImage, uploadImagesAndVideos } from "../middlewares/multer.middleware.js";
 
 const videoRoute = Router();
 
 videoRoute.use(verifyJWT); // enable on all routes.
 
 videoRoute.route("/add").post(
-    upload.fields([
-        {
-            name: "video",
-            maxCount: 1,
-        },
-        {
-            name: "thumbnail",
-            maxCount: 1,
-        },
-    ]),
+    uploadImagesAndVideos({
+        fields: [
+            { name: "video", type: "video", maxCount: 1 },
+            { name: "thumbnail", type: "image", maxCount: 1 },
+        ],
+    }),
     addVideo
 );
 
-videoRoute.route("/update-video").patch(updateVideo);
-
 videoRoute.route("/all").get(getAllVideos);
+videoRoute.route("/update").patch(updateVideo);
+videoRoute.route("/update-thumbnail").patch(uploadImage.single("thumbnail"), updateVideoThumbnail);
 
 /** dynamic route will at bottom  **/
 videoRoute.route("/:id").get(getVideoById);

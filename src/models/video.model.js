@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import { getPublicIdFromCloudinaryUrl, removeFromCloudinary } from "../utils/cloudinary.js";
 
 const videoSchema = new Schema(
     {
@@ -39,6 +40,27 @@ const videoSchema = new Schema(
         timestamps: true,
     }
 );
+
+videoSchema.pre("deleteOne", { document: true, query: false }, async function () {
+    if (this.video) {
+        const public_id = getPublicIdFromCloudinaryUrl(this.video);
+        if (public_id) {
+            const result = await removeFromCloudinary(public_id, "video");
+            if (result?.result !== "ok") {
+                console.log(`Video ${this.video} is not found when try to remove from cloudinary!`);
+            }
+        }
+    }
+    if (this.thumbnail) {
+        const public_id = getPublicIdFromCloudinaryUrl(this.thumbnail);
+        if (public_id) {
+            const result = await removeFromCloudinary(public_id);
+            if (result?.result !== "ok") {
+                console.log(`Thumbnail ${this.thumbnail} is not found when try to remove from cloudinary!`);
+            }
+        }
+    }
+});
 
 videoSchema.methods.toggleStatus = async function () {
     this.isPublished = !this.isPublished;
