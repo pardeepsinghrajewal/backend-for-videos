@@ -12,9 +12,10 @@ import {
     getAllUsers,
     deleteUser,
     changePasswordWithoutOldPassword,
+    getChannelProfile,
 } from "../controllers/user.controller.js";
 
-import { upload, uploadImage, uploadImagesAndVideos } from "../middlewares/multer.middleware.js";
+import { uploadImage, uploadImagesAndVideos } from "../middlewares/multer.middleware.js";
 import verifyJWT from "../middlewares/auth.middleware.js";
 
 const userRoute = Router();
@@ -44,6 +45,8 @@ userRoute.route("/register").post(
 );
 
 userRoute.route("/login").post(loginUser);
+userRoute.route("/get-all").get(getAllUsers);
+userRoute.route("/change-password-without-old-password").patch(changePasswordWithoutOldPassword);
 
 /** secured route **/
 userRoute.route("/logout").get(verifyJWT, logoutUser);
@@ -56,9 +59,8 @@ userRoute.route("/update-account").patch(verifyJWT, updateAccountInfo);
 
 userRoute.route("/update-avatar").patch(verifyJWT, uploadImage.single("avatar"), updateAvatar);
 userRoute.route("/update-cover-image").patch(verifyJWT, uploadImage.single("coverImage"), updateCoverImage);
-
-userRoute.route("/get-all").get(getAllUsers);
 userRoute.route("/delete").delete(verifyJWT, deleteUser);
-userRoute.route("/change-password-without-old-password").patch(changePasswordWithoutOldPassword);
+
+userRoute.route("/c/:username").get(verifyJWT, getChannelProfile);
 
 export default userRoute;

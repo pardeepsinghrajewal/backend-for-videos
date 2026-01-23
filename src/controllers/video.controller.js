@@ -77,7 +77,7 @@ const getVideoById = asyncHandler(async (req, res) => {
             throw new ApiError(400, "No video found related to given ID!");
         }
 
-        res.status(200).json(new ApiResponse(true, "Video information retrieved successfully!", video));
+        return res.status(200).json(new ApiResponse(true, "Video information retrieved successfully!", video));
     } catch (error) {
         if (error.name === "CastError") {
             return res.status(400).json(new ApiResponse(false, "Invalid video ID format"));
@@ -100,7 +100,7 @@ const toggleVideoStatus = asyncHandler(async (req, res) => {
         }
         await video.toggleStatus();
 
-        res.status(200).json(new ApiResponse(true, "Video status is toggled successfully!", video));
+        return res.status(200).json(new ApiResponse(true, "Video status is toggled successfully!", video));
     } catch (error) {
         if (error.name === "CastError") {
             return res.status(400).json(new ApiResponse(false, "Invalid video ID format"));
@@ -148,7 +148,7 @@ const updateVideo = asyncHandler(async (req, res) => {
         if (!video) {
             throw new ApiError(400, "No video found related to the given ID!");
         }
-        res.status(200).json(new ApiResponse(true, "Video updated successfully!", video));
+        return res.status(200).json(new ApiResponse(true, "Video updated successfully!", video));
     } catch (error) {
         if (error.name === "CastError") {
             return res.status(400).json(new ApiResponse(false, "Invalid video ID format"));
@@ -164,7 +164,7 @@ const updateVideo = asyncHandler(async (req, res) => {
 const getAllVideos = asyncHandler(async (req, res) => {
     try {
         const videos = await Video.find();
-        res.status(200).json(new ApiResponse(true, "Videos are fetched successfully!", videos));
+        return res.status(200).json(new ApiResponse(true, "Videos are fetched successfully!", videos));
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
@@ -187,7 +187,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
         const isVideoDeleted = await video.deleteOne();
 
-        res.status(200).json(new ApiResponse(true, "Video removed successfully!"));
+        return res.status(200).json(new ApiResponse(true, "Video removed successfully!"));
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
@@ -241,7 +241,7 @@ const updateVideoThumbnail = asyncHandler(async (req, res) => {
             }
         );
 
-        res.status(200).json(new ApiResponse(true, "Video thumbnail is updated successfully!", updatedVideo));
+        return res.status(200).json(new ApiResponse(true, "Video thumbnail is updated successfully!", updatedVideo));
     } catch (error) {
         if (req?.file?.path && fs.existsSync(req.file.path)) {
             fs.unlinkSync(req.file.path);
