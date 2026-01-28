@@ -13,6 +13,7 @@ import {
     deleteUser,
     changePasswordWithoutOldPassword,
     getChannelProfile,
+    getWatchHistory,
 } from "../controllers/user.controller.js";
 
 import { uploadImage, uploadImagesAndVideos } from "../middlewares/multer.middleware.js";
@@ -62,5 +63,7 @@ userRoute.route("/update-cover-image").patch(verifyJWT, uploadImage.single("cove
 userRoute.route("/delete").delete(verifyJWT, deleteUser);
 
 userRoute.route("/c/:username").get(verifyJWT, getChannelProfile);
+
+userRoute.route("/watch-history").get(verifyJWT, getWatchHistory);
 
 export default userRoute;

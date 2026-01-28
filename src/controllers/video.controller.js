@@ -4,6 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { removeFromCloudinary, uploadOnCloudinary, getPublicIdFromCloudinaryUrl } from "../utils/cloudinary.js";
 import { Video } from "../models/video.model.js";
 import fs from "fs";
+import { User } from "../models/user.model.js";
 
 const addVideo = asyncHandler(async (req, res) => {
     try {
@@ -258,4 +259,42 @@ const updateVideoThumbnail = asyncHandler(async (req, res) => {
     }
 });
 
-export { addVideo, getVideoById, toggleVideoStatus, updateVideo, getAllVideos, deleteVideo, updateVideoThumbnail };
+const watchVideo = asyncHandler(async (req, res) => {
+    try {
+        const { id } = req.params ?? {};
+        const video = await Video.findById(id);
+        if (!video) {
+            throw new ApiError(400, "No video found related to given id!");
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            {
+                $addToSet: { watchedHistory: id },
+            },
+            {
+                new: true,
+            }
+        );
+        return res.status(200).json(new ApiResponse(true, "Video id is added into history successfully!", user));
+    } catch (error) {
+        if (error.name === "CastError") {
+            return res.status(400).json(new ApiResponse(false, "Invalid ID format!"));
+        }
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, error?.message || "Error in watch function!");
+    }
+});
+
+export {
+    addVideo,
+    getVideoById,
+    toggleVideoStatus,
+    updateVideo,
+    getAllVideos,
+    deleteVideo,
+    updateVideoThumbnail,
+    watchVideo,
+};

@@ -8,6 +8,7 @@ import {
     getAllVideos,
     deleteVideo,
     updateVideoThumbnail,
+    watchVideo,
 } from "../controllers/video.controller.js";
 import { uploadImage, uploadImagesAndVideos } from "../middlewares/multer.middleware.js";
 
@@ -32,8 +33,10 @@ videoRoute.route("/update-thumbnail").patch(uploadImage.single("thumbnail"), upd
 /** dynamic route will at bottom  **/
 videoRoute.route("/:id").get(getVideoById);
 
-videoRoute.route("/toggle-status/:id").get(toggleVideoStatus);
+videoRoute.route("/toggle-status/:id").patch(toggleVideoStatus);
 
 videoRoute.route("/:id").delete(deleteVideo);
+
+videoRoute.route("/watch/:id").get(watchVideo);
 
 export default videoRoute;

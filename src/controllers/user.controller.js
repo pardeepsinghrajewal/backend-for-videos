@@ -497,7 +497,67 @@ const getChannelProfile = asyncHandler(async (req, res) => {
         if (!username) {
             throw new ApiError(400, "Username is required!");
         }
-        return res.status(200).json(new ApiResponse(true, "Channel profile retrieved successfully!"));
+
+        const channel = await User.aggregate([
+            {
+                $match: {
+                    username,
+                },
+            },
+            {
+                $lookup: {
+                    from: "subscriptions",
+                    localField: "_id",
+                    foreignField: "channel",
+                    as: "subscribers",
+                },
+            },
+            {
+                $lookup: {
+                    from: "subscriptions",
+                    localField: "_id",
+                    foreignField: "subscriber",
+                    as: "subscribeTo",
+                },
+            },
+            {
+                $addFields: {
+                    subscriberCount: {
+                        $size: "$subscribers",
+                    },
+                    channelSubscribedCount: {
+                        $size: "$subscribeTo",
+                    },
+                    isSubscribed: {
+                        $cond: {
+                            if: {
+                                $in: [req.user?._id, "$subscribers.subscriber"],
+                            },
+                            then: true,
+                            else: false,
+                        },
+                    },
+                },
+            },
+            {
+                $project: {
+                    fullName: 1,
+                    username: 1,
+                    email: 1,
+                    avatar: 1,
+                    coverImage: 1,
+                    subscriberCount: 1,
+                    channelSubscribedCount: 1,
+                    isSubscribed: 1,
+                },
+            },
+        ]);
+
+        if (!channel?.length) {
+            throw new ApiError(400, "Channel not found!");
+        }
+
+        return res.status(200).json(new ApiResponse(true, "Channel profile retrieved successfully!", channel[0]));
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
@@ -506,6 +566,60 @@ const getChannelProfile = asyncHandler(async (req, res) => {
     }
 });
 
+const getWatchHistory = asyncHandler(async (req, res) => {
+    try {
+        const history = await User.aggregate([
+            {
+                $match: {
+                    _id: req.user._id,
+                },
+            },
+            {
+                $lookup: {
+                    from: "videos",
+                    localField: "watchedHistory",
+                    foreignField: "_id",
+                    as: "watchedVideos",
+                    pipeline: [
+                        {
+                            $lookup: {
+                                from: "users",
+                                localField: "owner",
+                                foreignField: "_id",
+                                as: "owner",
+                                pipeline: [
+                                    {
+                                        $project: {
+                                            username: 1,
+                                            avatar: 1,
+                                            _id: 0,
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                        {
+                            $addFields: {
+                                owner: {
+                                    $first: "$owner",
+                                },
+                            },
+                        },
+                    ],
+                },
+            },
+        ]);
+
+        return res
+            .status(200)
+            .json(new ApiResponse(true, "User watched histoty get successfully!", history[0]?.watchedVideos));
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, error?.message || "Error while fetching watch history!");
+    }
+});
 const generateAccessAndRefreshToken = async (userID) => {
     try {
         const user = await User.findById(userID);
@@ -537,4 +651,5 @@ export {
     deleteUser,
     changePasswordWithoutOldPassword,
     getChannelProfile,
+    getWatchHistory,
 };
