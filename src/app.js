@@ -23,11 +23,13 @@ app.use(cookieParser());
 import userRoute from "./routes/user.route.js";
 import videoRoute from "./routes/video.route.js";
 import subscriptionRoute from "./routes/subscription.route.js";
+import commentRouter from "./routes/comment.route.js";
 
 // route binding
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/video", videoRoute);
 app.use("/api/v1/subscription", subscriptionRoute);
+app.use("/api/v1/comment", commentRouter);
 
 app.use(errorHandler);
 

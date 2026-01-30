@@ -164,8 +164,31 @@ const updateVideo = asyncHandler(async (req, res) => {
 
 const getAllVideos = asyncHandler(async (req, res) => {
     try {
-        const videos = await Video.find();
-        return res.status(200).json(new ApiResponse(true, "Videos are fetched successfully!", videos));
+        const { page = 1, limit = 10, sortBy, sortType } = req.body ?? {};
+
+        const skip = (page - 1) * limit;
+
+        const allowedSortFields = ["createdAt", "views", "duration", "title"];
+
+        const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+
+        const sortOrder = sortType === "asc" ? 1 : -1;
+        const sortOptions = { [sortField]: sortOrder };
+
+        const videos = await Video.find().sort(sortOptions).skip(skip).limit(limit);
+
+        const totalVideos = await Video.countDocuments();
+
+        const totalPages = Math.ceil(totalVideos / limit);
+
+        return res.status(200).json(
+            new ApiResponse(true, "Videos are fetched successfully!", {
+                videos,
+                totalVideos,
+                totalPages,
+                currentPage: page,
+            })
+        );
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
@@ -262,7 +285,16 @@ const updateVideoThumbnail = asyncHandler(async (req, res) => {
 const watchVideo = asyncHandler(async (req, res) => {
     try {
         const { id } = req.params ?? {};
-        const video = await Video.findById(id);
+        const video = await Video.findByIdAndUpdate(
+            id,
+            {
+                $inc: {
+                    views: 1,
+                },
+            },
+            { new: true }
+        );
+
         if (!video) {
             throw new ApiError(400, "No video found related to given id!");
         }
@@ -276,7 +308,15 @@ const watchVideo = asyncHandler(async (req, res) => {
                 new: true,
             }
         );
-        return res.status(200).json(new ApiResponse(true, "Video id is added into history successfully!", user));
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    true,
+                    `${video.title} id is added into history of ${user.username} successfully and video count updated to ${video.views} !`
+                )
+            );
     } catch (error) {
         if (error.name === "CastError") {
             return res.status(400).json(new ApiResponse(false, "Invalid ID format!"));
