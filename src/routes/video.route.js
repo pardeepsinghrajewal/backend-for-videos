@@ -5,7 +5,7 @@ import {
     getVideoById,
     toggleVideoStatus,
     updateVideo,
-    getAllVideos,
+    getVideos,
     deleteVideo,
     updateVideoThumbnail,
     watchVideo,
@@ -26,7 +26,7 @@ videoRoute.route("/add").post(
     addVideo
 );
 
-videoRoute.route("/all").get(getAllVideos);
+videoRoute.route("/all").get(getVideos);
 videoRoute.route("/update").patch(updateVideo);
 videoRoute.route("/update-thumbnail").patch(uploadImage.single("thumbnail"), updateVideoThumbnail);
 

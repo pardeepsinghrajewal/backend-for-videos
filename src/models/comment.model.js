@@ -6,12 +6,12 @@ const commentSchema = new Schema(
             type: String,
             required: [true, "comment is required"],
         },
-        video: {
+        videoID: {
             type: Schema.Types.ObjectId,
             ref: "Video",
             required: [true, "Video id is required"],
         },
-        user: {
+        userID: {
             type: Schema.Types.ObjectId,
             ref: "User",
             required: [true, "User id is required"],

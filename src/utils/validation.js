@@ -5,8 +5,17 @@ const isEmpty = (txt) => {
         return false;
     }
 };
+
 const isNotValidEmail = (email) => {
     return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
-export { isEmpty, isNotValidEmail };
+const isPositiveInteger = (value) => {
+    const num = Number(value);
+    if (!Number.isInteger(num) || num < 1) {
+        return false;
+    }
+    return true;
+};
+
+export { isEmpty, isNotValidEmail, isPositiveInteger };

@@ -5,6 +5,7 @@ import { removeFromCloudinary, uploadOnCloudinary, getPublicIdFromCloudinaryUrl 
 import { Video } from "../models/video.model.js";
 import fs from "fs";
 import { User } from "../models/user.model.js";
+import { isPositiveInteger } from "../utils/validation.js";
 
 const addVideo = asyncHandler(async (req, res) => {
     try {
@@ -162,9 +163,19 @@ const updateVideo = asyncHandler(async (req, res) => {
     }
 });
 
-const getAllVideos = asyncHandler(async (req, res) => {
+const getVideos = asyncHandler(async (req, res) => {
     try {
         const { page = 1, limit = 10, sortBy, sortType } = req.body ?? {};
+
+        const pageNo = Number(page);
+
+        if (!isPositiveInteger(page)) {
+            throw new ApiError(400, `"page" must be a positive integer.`);
+        }
+
+        if (!isPositiveInteger(limit)) {
+            throw new ApiError(400, `"limit" must be a positive integer.`);
+        }
 
         const skip = (page - 1) * limit;
 
@@ -193,6 +204,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
         if (error instanceof ApiError) {
             throw error;
         }
+
         throw new ApiError(500, error?.message || "Error while getting all videos!");
     }
 });
@@ -333,7 +345,7 @@ export {
     getVideoById,
     toggleVideoStatus,
     updateVideo,
-    getAllVideos,
+    getVideos,
     deleteVideo,
     updateVideoThumbnail,
     watchVideo,
