@@ -46,14 +46,15 @@ userRoute.route("/register").post(
 );
 
 userRoute.route("/login").post(loginUser);
-userRoute.route("/get-all").get(getAllUsers);
+
+userRoute.route("/all").get(getAllUsers); // ??
 userRoute.route("/change-password-without-old-password").patch(changePasswordWithoutOldPassword);
 
 /** secured route **/
 userRoute.route("/logout").get(verifyJWT, logoutUser);
 userRoute.route("/refresh-token").post(refreshToken);
 userRoute.route("/change-password").patch(verifyJWT, changePassword);
-userRoute.route("/get-current").get(verifyJWT, getCurrentUser);
+userRoute.route("/current").get(verifyJWT, getCurrentUser);
 userRoute.route("/update-account").patch(verifyJWT, updateAccountInfo);
 // userRoute.route("/update-avatar").patch(verifyJWT, upload.single("avatar"), updateAvatar);
 // userRoute.route("/update-cover-image").patch(verifyJWT, upload.single("coverImage"), updateCoverImage);

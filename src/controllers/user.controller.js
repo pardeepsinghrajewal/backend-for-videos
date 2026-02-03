@@ -20,24 +20,24 @@ const registerUser = asyncHandler(async (req, res) => {
         const { username, email, password, fullName } = req.body ?? {};
 
         if (isEmpty(username)) {
-            throw new ApiError(400, "Username is required!");
+            throw new ApiError(400, `"username" is required.`);
         }
 
         if (isEmpty(email)) {
-            throw new ApiError(400, "Email is required!");
+            throw new ApiError(400, `"email" is required.`);
         }
 
         if (isNotValidEmail(email)) {
-            throw new ApiError(400, "Email is not valid!");
+            throw new ApiError(400, `"email" is not valid.`);
         }
 
         if (isEmpty(password)) {
-            throw new ApiError(400, "Password is required!");
+            throw new ApiError(400, `"password" is required.`);
         }
 
         const avatarLocalPath = req?.files?.avatar?.[0]?.path;
         if (!avatarLocalPath) {
-            throw new ApiError(400, "Avatar image is required!");
+            throw new ApiError(400, `"avatar" image is required.`);
         }
 
         const existedUser = await User.findOne({
@@ -45,12 +45,12 @@ const registerUser = asyncHandler(async (req, res) => {
         });
 
         if (existedUser) {
-            throw new ApiError(400, "User is already exist!");
+            throw new ApiError(400, "User is already exist.");
         }
 
         const avatar = await uploadOnCloudinary(avatarLocalPath);
         if (avatar == null || avatar == undefined) {
-            throw new ApiError(500, "Server error while uploading avatar image!");
+            throw new ApiError(500, "Server error while uploading avatar image.");
         }
 
         const coverImageLocalPath = req?.files?.coverImage?.[0]?.path;
@@ -90,24 +90,24 @@ const loginUser = asyncHandler(async (req, res) => {
         const { username, password } = req.body ?? {};
 
         if (isEmpty(username)) {
-            throw new ApiError(400, "Username is required!");
+            throw new ApiError(400, `"username" is required.`);
         }
 
         if (isEmpty(password)) {
-            throw new ApiError(400, "Password is required!");
+            throw new ApiError(400, `"password" is required.`);
         }
 
         const user = await User.findOne({
             $or: [{ username }],
         });
         if (!user) {
-            throw new ApiError(400, "User does not exist!");
+            throw new ApiError(400, "User does not exist.");
         }
 
         const isPasswordValid = await user.isPasswordCorrect(password);
 
         if (!isPasswordValid) {
-            throw new ApiError(401, "Password does not match!");
+            throw new ApiError(400, "Password does not match.");
         }
 
         const accessToken = user.generateAccessToken();
@@ -118,17 +118,18 @@ const loginUser = asyncHandler(async (req, res) => {
 
         user.password = "*****";
         user.refreshToken = "*****";
+        user.watchedHistory = [];
 
         return res
             .status(200)
             .cookie("accessToken", accessToken, cookieOptions)
             .cookie("refreshToken", refreshToken, cookieOptions)
-            .json(new ApiResponse(true, "User logged in successfully!", { user, accessToken, refreshToken }));
+            .json(new ApiResponse(true, "User logged in successfully.", { user, accessToken, refreshToken }));
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
         }
-        throw new ApiError(500, error?.message || "Error while login!");
+        throw new ApiError(500, error?.message || "Error while login.");
     }
 });
 
@@ -144,9 +145,9 @@ const logoutUser = asyncHandler(async (req, res) => {
             .status(200)
             .clearCookie("accessToken", cookieOptions)
             .clearCookie("refreshToken", cookieOptions)
-            .json(new ApiResponse(true, "User logged out successfully!"));
+            .json(new ApiResponse(true, "User logged out successfully."));
     } catch (error) {
-        throw new ApiError(500, "Error while logout!");
+        throw new ApiError(500, "Error while logout.");
     }
 });
 
@@ -164,7 +165,7 @@ const refreshToken = asyncHandler(async (req, res) => {
         }
         const user = await User.findById(decodedToken._id);
 
-        if (!user._id || !user.refreshToken) {
+        if (!user) {
             throw new ApiError(401, "Invalid refresh token");
         }
 
@@ -182,7 +183,7 @@ const refreshToken = asyncHandler(async (req, res) => {
             .status(200)
             .cookie("accessToken", accessToken, cookieOptions)
             .cookie("refreshToken", refreshToken, cookieOptions)
-            .json(new ApiResponse(true, "Token refreshed successfully!", { accessToken, refreshToken }));
+            .json(new ApiResponse(true, "Token refreshed successfully.", { accessToken, refreshToken }));
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
@@ -196,19 +197,19 @@ const changePassword = asyncHandler(async (req, res) => {
         const { oldPassword, newPassword, confirmPassword } = req.body ?? {};
 
         if (!oldPassword) {
-            throw new ApiError(400, "Password is required!");
+            throw new ApiError(400, `"oldPassword" is required.`);
         }
 
         if (!newPassword) {
-            throw new ApiError(400, "New Password is required!");
+            throw new ApiError(400, `"newPassword" is required.`);
         }
 
         if (!confirmPassword) {
-            throw new ApiError(400, "Confirm Password is required!");
+            throw new ApiError(400, `"confirmPassword" is required.`);
         }
 
         if (newPassword !== confirmPassword) {
-            throw new ApiError(400, "Confirm Password is not matched!");
+            throw new ApiError(400, `"confirmPassword" is not matched with "newPassword".`);
         }
 
         const user = await User.findById(req.user._id);
@@ -216,19 +217,19 @@ const changePassword = asyncHandler(async (req, res) => {
         const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
         if (!isPasswordCorrect) {
-            throw new ApiError(400, "Old password is not correct!");
+            throw new ApiError(400, `"oldPassword" is not correct."`);
         }
 
         user.password = newPassword;
 
         user.save({ validateBeforeSave: false });
 
-        return res.status(200).json(new ApiResponse(true, "Password updated successfully!"));
+        return res.status(200).json(new ApiResponse(true, "Password updated successfully."));
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
         }
-        throw new ApiError(500, error?.message || "Error while changing the password!");
+        throw new ApiError(500, error?.message || "Error while changing the password.");
     }
 });
 
@@ -237,15 +238,15 @@ const changePasswordWithoutOldPassword = asyncHandler(async (req, res) => {
         const { email, newPassword } = req.body ?? {};
 
         if (isEmpty(email)) {
-            throw new ApiError(400, "Email is required!");
+            throw new ApiError(400, `"email" is required.`);
         }
 
         if (isNotValidEmail(email)) {
-            throw new ApiError(400, "Email is not valid!");
+            throw new ApiError(400, `"email" is not valid.`);
         }
 
         if (!newPassword) {
-            throw new ApiError(400, "New Password is required!");
+            throw new ApiError(400, `"newPassword" is required.`);
         }
 
         const user = await User.findOne({
@@ -253,26 +254,29 @@ const changePasswordWithoutOldPassword = asyncHandler(async (req, res) => {
         });
 
         if (!user) {
-            throw new ApiError(400, "User does not exist!");
+            throw new ApiError(400, "User does not exist.");
         }
         user.password = newPassword;
 
         user.save({ validateBeforeSave: false });
 
-        return res.status(200).json(new ApiResponse(true, "Password changed successfully!"));
+        return res.status(200).json(new ApiResponse(true, "Password changed successfully."));
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
         }
-        throw new ApiError(500, error?.message || "Error while changing the password!");
+        throw new ApiError(500, error?.message || "Error while changing the password.");
     }
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
     try {
-        return res.status(200).json(new ApiResponse(true, "current user get successfully", req.user));
+        const user = req.user;
+        user.watchedHistory = [];
+
+        return res.status(200).json(new ApiResponse(true, "current user get successfully.", user));
     } catch (error) {
-        throw new ApiError(500, "Error while getting the current user!");
+        throw new ApiError(500, "Error while getting the current user.");
     }
 });
 
@@ -281,11 +285,11 @@ const updateAccountInfo = asyncHandler(async (req, res) => {
         const { email, fullName } = req.body ?? {};
 
         if (!email && !fullName) {
-            throw new ApiError(400, "All fields are empty!");
+            throw new ApiError(400, `"email" or "fullName" is required.`);
         }
 
         if (!isEmpty(email) && isNotValidEmail(email)) {
-            throw new ApiError(400, "Email is not valid!");
+            throw new ApiError(400, `"email" is not valid.`);
         }
 
         const updatedInfo = {};
@@ -310,13 +314,14 @@ const updateAccountInfo = asyncHandler(async (req, res) => {
 
         user.password = "*****";
         user.refreshToken = "*****";
+        user.watchedHistory = [];
 
-        return res.status(200).json(new ApiResponse(true, "Information is updated successfully!", user));
+        return res.status(200).json(new ApiResponse(true, "User information is updated successfully!", user));
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
         }
-        throw new ApiError(500, error?.message || "Error while updating the account info!");
+        throw new ApiError(500, error?.message || "Error while updating the account info.");
     }
 });
 
@@ -325,13 +330,13 @@ const updateAvatar = asyncHandler(async (req, res) => {
         const avatarLocalPath = req.file?.path;
 
         if (!avatarLocalPath) {
-            throw new ApiError(400, "Avatar image is required!");
+            throw new ApiError(400, `"avatar" image is required.`);
         }
 
         const avatar = await uploadOnCloudinary(avatarLocalPath);
 
         if (!avatar || !avatar.secure_url) {
-            throw new ApiError(500, "Error while updating the avatar image to cloudinary!");
+            throw new ApiError(500, `Error while updating the "avatar" image to cloudinary.`);
         }
 
         const user = await User.findByIdAndUpdate(
@@ -348,6 +353,7 @@ const updateAvatar = asyncHandler(async (req, res) => {
 
         user.password = "*****";
         user.refreshToken = "*****";
+        user.watchedHistory = [];
 
         if (req?.user?.avatar) {
             const public_id = getPublicIdFromCloudinaryUrl(req.user.avatar);
@@ -361,7 +367,7 @@ const updateAvatar = asyncHandler(async (req, res) => {
             }
         }
 
-        return res.status(200).json(new ApiResponse(true, "Avatar image is updated successfully!", user));
+        return res.status(200).json(new ApiResponse(true, "Avatar image is updated successfully.", user));
     } catch (error) {
         if (fs.existsSync(req.file?.path)) {
             fs.unlinkSync(req.file.path);
@@ -369,7 +375,7 @@ const updateAvatar = asyncHandler(async (req, res) => {
         if (error instanceof ApiError) {
             throw error;
         }
-        throw new ApiError(500, error?.message || "Error while updating the avatar image!");
+        throw new ApiError(500, error?.message || "Error while updating the avatar image.");
     }
 });
 
@@ -378,13 +384,13 @@ const updateCoverImage = asyncHandler(async (req, res) => {
         const coverImageLocalPath = req.file?.path;
 
         if (!coverImageLocalPath) {
-            throw new ApiError(400, "Cover image is required!");
+            throw new ApiError(400, `"coverImage" is required.`);
         }
 
         const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
         if (!coverImage || !coverImage.secure_url) {
-            throw new ApiError(500, "Server error while uploading cover image to cloudinary");
+            throw new ApiError(500, `Server error while uploading the "coverImage" image to cloudinary.`);
         }
 
         const user = await User.findByIdAndUpdate(
@@ -401,6 +407,7 @@ const updateCoverImage = asyncHandler(async (req, res) => {
 
         user.password = "*****";
         user.refreshToken = "*****";
+        user.watchedHistory = [];
 
         if (req?.user?.coverImage) {
             const public_id = getPublicIdFromCloudinaryUrl(req.user.coverImage);
@@ -414,7 +421,7 @@ const updateCoverImage = asyncHandler(async (req, res) => {
             }
         }
 
-        return res.status(200).json(new ApiResponse(true, "Cover image updated successfully!", user));
+        return res.status(200).json(new ApiResponse(true, "Cover image updated successfully.", user));
     } catch (error) {
         if (fs.existsSync(req.file?.path)) {
             fs.unlinkSync(req.file.path);
@@ -422,23 +429,23 @@ const updateCoverImage = asyncHandler(async (req, res) => {
         if (error instanceof ApiError) {
             throw error;
         }
-        throw new ApiError(500, error?.message || "Server error while updating cover image");
+        throw new ApiError(500, error?.message || "Server error while updating cover image.");
     }
 });
 
 const getAllUsers = asyncHandler(async (req, res) => {
-    const users = await User.find().select("-refreshToken -password");
+    const users = await User.find().select("-refreshToken -password -watchedHistory");
 
-    return res.status(200).json(new ApiResponse(true, "All Users info retrieved successfully!", users));
+    return res.status(200).json(new ApiResponse(true, "All Users info retrieved successfully.", users));
 });
 
 const deleteUser = asyncHandler(async (req, res) => {
     try {
-        const userID = req?.user?._id || null;
+        const userID = req.user._id;
 
-        const userAvatar = req?.user?.avatar || null;
+        const userAvatar = req.user?.avatar || null;
 
-        const userCoverImage = req?.user?.coverImage || null;
+        const userCoverImage = req.user?.coverImage || null;
 
         const videos = await Video.find({
             owner: userID,
@@ -458,7 +465,7 @@ const deleteUser = asyncHandler(async (req, res) => {
                 const result = await removeFromCloudinary(public_id);
                 if (result?.result !== "ok") {
                     console.log(
-                        `Avatar ${userAvatar} is not found when try to remove from cloudinary while deleting the user!`
+                        `Avatar ${userAvatar} is not found when try to remove from cloudinary while deleting the user.`
                     );
                 }
             }
@@ -469,7 +476,7 @@ const deleteUser = asyncHandler(async (req, res) => {
                 const result = await removeFromCloudinary(public_id);
                 if (result?.result !== "ok") {
                     console.log(
-                        `Cover image ${userCoverImage} is not found when try to remove from cloudinary while deleting the user!`
+                        `Cover image ${userCoverImage} is not found when try to remove from cloudinary while deleting the user.`
                     );
                 }
             }
@@ -481,12 +488,12 @@ const deleteUser = asyncHandler(async (req, res) => {
             .status(200)
             .clearCookie("accessToken", cookieOptions)
             .clearCookie("refreshToken", cookieOptions)
-            .json(new ApiResponse(true, "User deleted and logged out successfully!"));
+            .json(new ApiResponse(true, "User deleted and logged out successfully."));
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
         }
-        throw new ApiError(500, error?.message || "Error while deleting the user!");
+        throw new ApiError(500, error?.message || "Error while deleting the user.");
     }
 });
 
@@ -495,7 +502,7 @@ const getChannelProfile = asyncHandler(async (req, res) => {
         const { username } = req.params ?? {};
 
         if (!username) {
-            throw new ApiError(400, "Username is required!");
+            throw new ApiError(400, `"username" is required.`);
         }
 
         const channel = await User.aggregate([
@@ -554,15 +561,15 @@ const getChannelProfile = asyncHandler(async (req, res) => {
         ]);
 
         if (!channel?.length) {
-            throw new ApiError(400, "Channel not found!");
+            throw new ApiError(400, "Channel not found.");
         }
 
-        return res.status(200).json(new ApiResponse(true, "Channel profile retrieved successfully!", channel[0]));
+        return res.status(200).json(new ApiResponse(true, "Channel profile retrieved successfully.", channel[0]));
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
         }
-        throw new ApiError(500, error?.message || "Error while getting the channel profile!");
+        throw new ApiError(500, error?.message || "Error while getting the channel profile.");
     }
 });
 
@@ -612,14 +619,15 @@ const getWatchHistory = asyncHandler(async (req, res) => {
 
         return res
             .status(200)
-            .json(new ApiResponse(true, "User watched histoty get successfully!", history[0]?.watchedVideos));
+            .json(new ApiResponse(true, "User watched histoty get successfully.", history[0]?.watchedVideos));
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
         }
-        throw new ApiError(500, error?.message || "Error while fetching watch history!");
+        throw new ApiError(500, error?.message || "Error while fetching watch history.");
     }
 });
+
 const generateAccessAndRefreshToken = async (userID) => {
     try {
         const user = await User.findById(userID);

@@ -47,6 +47,95 @@ const addComment = asyncHandler(async (req, res) => {
     }
 });
 
+const updateCommnet = asyncHandler(async (req, res) => {
+    try {
+        const { id, content } = req.body ?? {};
+
+        if (!id) {
+            throw new ApiError(400, `"id" is required.`);
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            throw new ApiError(400, `"id" is not valid.`);
+        }
+
+        if (!content) {
+            throw new ApiError(400, `"content" is required.`);
+        }
+
+        const comment = await Comment.findByIdAndUpdate(
+            id,
+            {
+                content,
+            },
+            { new: true }
+        );
+
+        if (!comment) {
+            throw new ApiError(400, `No comment found related to the given "ID"`);
+        }
+
+        res.status(200).json(new ApiResponse(true, "Comment is updated successfully.", comment));
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, error?.message || "Error while updating comment.");
+    }
+});
+
+const getComment = asyncHandler(async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id) {
+            throw new ApiError(400, `"id" is required.`);
+        }
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            throw new ApiError(400, `"id" is not valid.`);
+        }
+
+        const comment = await Comment.findById(id);
+        if (!comment) {
+            throw new ApiError(400, `No comment found related to the given "id".`);
+        }
+        res.status(200).json(new ApiResponse(true, "Comment information is fetched successfully!", comment));
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, error?.message || "Error while getting the comment info.");
+    }
+});
+
+const removeComment = asyncHandler(async (req, res) => {
+    try {
+        const { id } = req.params ?? {};
+        if (!id) {
+            throw new ApiError(400, `"id" is required!`);
+        }
+
+        if (id && !mongoose.Types.ObjectId.isValid(id)) {
+            throw new ApiError(400, `"id" is not valid.`);
+        }
+
+        const comment = await Comment.findOneAndDelete({
+            _id: id,
+            userID: req.user._id,
+        });
+
+        if (!comment) {
+            throw new ApiError(400, `No comment found related to given "ID"`);
+        }
+
+        return res.status(200).json(new ApiResponse(true, "Comment is removed successfully.", comment));
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, error?.message || "Error while removing comment!");
+    }
+});
+
 const getComments = asyncHandler(async (req, res) => {
     try {
         const { page = 1, limit = 10, sortType, videoID, userID } = req.query ?? {};
@@ -115,70 +204,4 @@ const getComments = asyncHandler(async (req, res) => {
     }
 });
 
-const updateCommnet = asyncHandler(async (req, res) => {
-    try {
-        const { id, content } = req.body ?? {};
-
-        if (!id) {
-            throw new ApiError(400, `"id" is required.`);
-        }
-
-        if (id && !mongoose.Types.ObjectId.isValid(id)) {
-            throw new ApiError(400, `"id" is not valid.`);
-        }
-
-        if (!content) {
-            throw new ApiError(400, `"content" is required.`);
-        }
-
-        const comment = await Comment.findByIdAndUpdate(
-            id,
-            {
-                content,
-            },
-            { new: true }
-        );
-
-        if (!comment) {
-            throw new ApiError(400, `No comment found related to the given "ID"`);
-        }
-
-        res.status(200).json(new ApiResponse(true, "Comment is updated successfully.", comment));
-    } catch (error) {
-        if (error instanceof ApiError) {
-            throw error;
-        }
-        throw new ApiError(500, error?.message || "Error while updating comment.");
-    }
-});
-
-const removeComment = asyncHandler(async (req, res) => {
-    try {
-        const { id } = req.params ?? {};
-        if (!id) {
-            throw new ApiError(400, `"id" is required!`);
-        }
-
-        if (id && !mongoose.Types.ObjectId.isValid(id)) {
-            throw new ApiError(400, `"id" is not valid.`);
-        }
-
-        const comment = await Comment.findOneAndDelete({
-            _id: id,
-            userID: req.user._id,
-        });
-
-        if (!comment) {
-            throw new ApiError(400, `No comment found related to given "ID"`);
-        }
-
-        return res.status(200).json(new ApiResponse(true, "Comment is removed successfully.", comment));
-    } catch (error) {
-        if (error instanceof ApiError) {
-            throw error;
-        }
-        throw new ApiError(500, error?.message || "Error while removing comment!");
-    }
-});
-
-export { addComment, removeComment, updateCommnet, getComments };
+export { addComment, removeComment, updateCommnet, getComment, getComments };

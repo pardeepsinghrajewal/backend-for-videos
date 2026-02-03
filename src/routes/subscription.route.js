@@ -1,5 +1,7 @@
 import { Router } from "express";
 import {
+    getSubscription,
+    getSubscriptions,
     toggleSubscription,
     getSubscribedChannelsOfUser,
     getChannelSubscribers,
@@ -10,8 +12,12 @@ const subscriptionRoute = Router();
 
 subscriptionRoute.use(verifyJWT);
 
-subscriptionRoute.route("/toggle").post(toggleSubscription);
+subscriptionRoute.route("/").get(getSubscriptions);
 subscriptionRoute.route("/subscribed-channels-of-user").get(getSubscribedChannelsOfUser);
-subscriptionRoute.route("/channel-subscribers").post(getChannelSubscribers);
+subscriptionRoute.route("/channel-subscribers").get(getChannelSubscribers);
+
+/** dynamic route will at bottom  **/
+subscriptionRoute.route("/:id").get(getSubscription);
+subscriptionRoute.route("/toggle/:channelID").patch(toggleSubscription);
 
 export default subscriptionRoute;

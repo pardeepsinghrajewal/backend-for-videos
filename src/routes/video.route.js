@@ -16,7 +16,7 @@ const videoRoute = Router();
 
 videoRoute.use(verifyJWT); // enable on all routes.
 
-videoRoute.route("/add").post(
+videoRoute.route("/").post(
     uploadImagesAndVideos({
         fields: [
             { name: "video", type: "video", maxCount: 1 },
@@ -26,17 +26,14 @@ videoRoute.route("/add").post(
     addVideo
 );
 
-videoRoute.route("/all").get(getVideos);
-videoRoute.route("/update").patch(updateVideo);
+videoRoute.route("/").get(getVideos);
+videoRoute.route("/").patch(updateVideo);
 videoRoute.route("/update-thumbnail").patch(uploadImage.single("thumbnail"), updateVideoThumbnail);
 
 /** dynamic route will at bottom  **/
 videoRoute.route("/:id").get(getVideoById);
-
-videoRoute.route("/toggle-status/:id").patch(toggleVideoStatus);
-
 videoRoute.route("/:id").delete(deleteVideo);
-
+videoRoute.route("/toggle-status/:id").patch(toggleVideoStatus);
 videoRoute.route("/watch/:id").get(watchVideo);
 
 export default videoRoute;
