@@ -16,7 +16,6 @@ playlistRoute.route("/").post(createPlayList);
 
 /** dynamic route will at bottom  **/
 playlistRoute.route("/:id").get(getPlayList).patch(updatePlayList).delete(deletePlayList);
-playlistRoute.route("/:id/videos").post(addVideoToPlayList);
-playlistRoute.route("/:id/videos").delete(removeVideoFromPlayList);
+playlistRoute.route("/:id/videos").post(addVideoToPlayList).delete(removeVideoFromPlayList);
 
 export default playlistRoute;

@@ -29,9 +29,7 @@ videoRoute.route("/").post(
 videoRoute.route("/").get(getVideos);
 
 /** dynamic route will at bottom  **/
-videoRoute.route("/:id").get(getVideoById);
-videoRoute.route("/:id").delete(deleteVideo);
-videoRoute.route("/:id").patch(updateVideo);
+videoRoute.route("/:id").get(getVideoById).delete(deleteVideo).patch(updateVideo);
 videoRoute.route("/:id/update-thumbnail").patch(uploadImage.single("thumbnail"), updateVideoThumbnail);
 videoRoute.route("/toggle-status/:id").patch(toggleVideoStatus);
 videoRoute.route("/watch/:id").get(watchVideo);
