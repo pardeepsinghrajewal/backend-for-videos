@@ -43,13 +43,19 @@ const addComment = asyncHandler(async (req, res) => {
         if (error instanceof ApiError) {
             throw error;
         }
+        if (error.name === "ValidationError") {
+            const messages = Object.values(error.errors).map((err) => err.message);
+            throw new ApiError(400, messages.join(", "));
+        }
         throw new ApiError(500, error?.message || "Error while adding comment.");
     }
 });
 
 const updateCommnet = asyncHandler(async (req, res) => {
     try {
-        const { id, content } = req.body ?? {};
+        const { id } = req.params ?? {};
+
+        const { content } = req.body ?? {};
 
         if (!id) {
             throw new ApiError(400, `"id" is required.`);
@@ -79,6 +85,10 @@ const updateCommnet = asyncHandler(async (req, res) => {
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
+        }
+        if (error.name === "ValidationError") {
+            const messages = Object.values(error.errors).map((err) => err.message);
+            throw new ApiError(400, messages.join(", "));
         }
         throw new ApiError(500, error?.message || "Error while updating comment.");
     }

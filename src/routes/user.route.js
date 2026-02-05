@@ -47,7 +47,7 @@ userRoute.route("/register").post(
 
 userRoute.route("/login").post(loginUser);
 
-userRoute.route("/all").get(getAllUsers); // ??
+userRoute.route("/all").get(getAllUsers);
 userRoute.route("/change-password-without-old-password").patch(changePasswordWithoutOldPassword);
 
 /** secured route **/

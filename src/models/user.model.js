@@ -6,28 +6,28 @@ const userSchema = new Schema(
     {
         username: {
             type: String,
-            required: [true, "Username is required"],
+            required: [true, `"username" is required.`],
             unique: true,
             lowercase: true,
             trim: true,
-            minlength: [5, "Username must be at least 5 characters"],
-            maxlength: [20, "Username must be at most 20 characters"],
+            minlength: [5, `"username" must be at least 5 characters.`],
+            maxlength: [20, `"username" must be at most 20 characters.`],
             index: true,
         },
         email: {
             type: String,
-            required: [true, "Email is required"],
+            required: [true, `"email" is required.`],
             unique: true,
             lowercase: true,
             trim: true,
         },
         password: {
             type: String,
-            required: [true, "Password is required"],
+            required: [true, `"password" is required.`],
         },
         avatar: {
             type: String,
-            required: [true, "Avtar is required"],
+            required: [true, `"avatar" is required.`],
         },
         fullName: {
             type: String,

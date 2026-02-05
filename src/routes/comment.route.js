@@ -10,8 +10,8 @@ import {
 
 const commentRouter = Router();
 
-commentRouter.route("/").get(getComments).post(verifyJWT, addComment).patch(verifyJWT, updateCommnet);
+commentRouter.route("/").get(getComments).post(verifyJWT, addComment);
 /** dynamic route will at bottom  **/
-commentRouter.route("/:id").get(verifyJWT, getComment).delete(verifyJWT, removeComment);
+commentRouter.route("/:id").get(verifyJWT, getComment).delete(verifyJWT, removeComment).patch(verifyJWT, updateCommnet);
 
 export default commentRouter;

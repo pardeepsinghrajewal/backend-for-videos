@@ -5,23 +5,23 @@ const videoSchema = new Schema(
     {
         video: {
             type: String,
-            required: [true, "Video src is required"],
+            required: [true, `"video" is required.`],
         },
         thumbnail: {
             type: String,
-            required: [true, "Video thumbnail is required"],
+            required: [true, `"thumbnail" is required.`],
         },
         title: {
             type: String,
-            required: [true, "Video title is required"],
+            required: [true, `"title" is required.`],
         },
         description: {
             type: String,
-            required: [true, "Video description is required"],
+            required: [true, `"description" is required.`],
         },
         duration: {
             type: String,
-            required: [true, "Video duration is required"],
+            required: [true, `"duration" is required.`],
         },
         views: {
             type: Number,

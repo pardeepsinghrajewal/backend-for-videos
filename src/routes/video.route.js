@@ -27,12 +27,12 @@ videoRoute.route("/").post(
 );
 
 videoRoute.route("/").get(getVideos);
-videoRoute.route("/").patch(updateVideo);
-videoRoute.route("/update-thumbnail").patch(uploadImage.single("thumbnail"), updateVideoThumbnail);
 
 /** dynamic route will at bottom  **/
 videoRoute.route("/:id").get(getVideoById);
 videoRoute.route("/:id").delete(deleteVideo);
+videoRoute.route("/:id").patch(updateVideo);
+videoRoute.route("/:id/update-thumbnail").patch(uploadImage.single("thumbnail"), updateVideoThumbnail);
 videoRoute.route("/toggle-status/:id").patch(toggleVideoStatus);
 videoRoute.route("/watch/:id").get(watchVideo);
 

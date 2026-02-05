@@ -81,6 +81,11 @@ const registerUser = asyncHandler(async (req, res) => {
             throw error;
         }
 
+        if (error.name === "ValidationError") {
+            const messages = Object.values(error.errors).map((err) => err.message);
+            throw new ApiError(400, messages.join(", "));
+        }
+
         throw new ApiError(500, error?.message || "Error while register the user!");
     }
 });
@@ -229,6 +234,10 @@ const changePassword = asyncHandler(async (req, res) => {
         if (error instanceof ApiError) {
             throw error;
         }
+        if (error.name === "ValidationError") {
+            const messages = Object.values(error.errors).map((err) => err.message);
+            throw new ApiError(400, messages.join(", "));
+        }
         throw new ApiError(500, error?.message || "Error while changing the password.");
     }
 });
@@ -264,6 +273,10 @@ const changePasswordWithoutOldPassword = asyncHandler(async (req, res) => {
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
+        }
+        if (error.name === "ValidationError") {
+            const messages = Object.values(error.errors).map((err) => err.message);
+            throw new ApiError(400, messages.join(", "));
         }
         throw new ApiError(500, error?.message || "Error while changing the password.");
     }
@@ -320,6 +333,10 @@ const updateAccountInfo = asyncHandler(async (req, res) => {
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
+        }
+        if (error.name === "ValidationError") {
+            const messages = Object.values(error.errors).map((err) => err.message);
+            throw new ApiError(400, messages.join(", "));
         }
         throw new ApiError(500, error?.message || "Error while updating the account info.");
     }

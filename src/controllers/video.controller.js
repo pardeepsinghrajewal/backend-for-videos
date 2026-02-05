@@ -66,6 +66,11 @@ const addVideo = asyncHandler(async (req, res) => {
             throw error;
         }
 
+        if (error.name === "ValidationError") {
+            const messages = Object.values(error.errors).map((err) => err.message);
+            throw new ApiError(400, messages.join(", "));
+        }
+
         throw new ApiError(500, error?.message || "Error while adding the video record.");
     }
 });
@@ -100,7 +105,9 @@ const getVideoById = asyncHandler(async (req, res) => {
 
 const updateVideo = asyncHandler(async (req, res) => {
     try {
-        const { id, title, description } = req.body ?? {};
+        const { id } = req.params ?? {};
+
+        const { title, description } = req.body ?? {};
 
         if (!id) {
             throw new ApiError(400, `"id" is required.`);
@@ -141,6 +148,10 @@ const updateVideo = asyncHandler(async (req, res) => {
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
+        }
+        if (error.name === "ValidationError") {
+            const messages = Object.values(error.errors).map((err) => err.message);
+            throw new ApiError(400, messages.join(", "));
         }
         throw new ApiError(500, error?.message || "Error while updating the video information.");
     }
@@ -269,7 +280,7 @@ const updateVideoThumbnail = asyncHandler(async (req, res) => {
             throw new ApiError(400, `"thumbnail" is required!"`);
         }
 
-        const { id } = req.body ?? {};
+        const { id } = req.params ?? {};
 
         if (!id) {
             throw new ApiError(400, `"id" is required.`);
